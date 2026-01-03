@@ -2,7 +2,11 @@ package com.indieradio.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,7 +46,7 @@ fun SettingsScreen() {
             )
 
             SettingsItem(
-                icon = Icons.Default.Audiotrack,
+                icon = Icons.Default.MusicNote,
                 title = "Audio Quality",
                 subtitle = "Automatic",
                 onClick = { /* TODO: Audio quality settings */ }
@@ -118,7 +122,7 @@ fun SettingsItem(
                 )
             }
             Icon(
-                imageVector = Icons.Default.ChevronRight,
+                imageVector = Icons.Default.ArrowForward,
                 contentDescription = "Open",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

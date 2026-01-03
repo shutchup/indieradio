@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -102,7 +105,7 @@ fun BrowseScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                imageVector = Icons.Default.RadioButtonUnchecked,
+                                imageVector = Icons.Default.Radio,
                                 contentDescription = null,
                                 modifier = Modifier.size(64.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -136,7 +139,7 @@ fun BrowseScreen(
 }
 
 enum class BrowseCategory(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    Popular("Popular", Icons.Default.TrendingUp),
+    Popular("Popular", Icons.Default.Star),
     Country("Country", Icons.Default.Place),
     Genre("Genre", Icons.Default.MusicNote)
 }
