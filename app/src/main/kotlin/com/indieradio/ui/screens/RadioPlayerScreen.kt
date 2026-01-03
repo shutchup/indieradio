@@ -56,7 +56,7 @@ fun RadioPlayerScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Divider()
+            HorizontalDivider()
 
             // Search Bar
             OutlinedTextField(
