@@ -1,6 +1,10 @@
 package com.indieradio.di
 
+import com.indieradio.data.repository.FavoriteRepositoryImpl
+import com.indieradio.data.repository.HistoryRepositoryImpl
 import com.indieradio.data.repository.StationRepositoryImpl
+import com.indieradio.domain.repository.FavoriteRepository
+import com.indieradio.domain.repository.HistoryRepository
 import com.indieradio.domain.repository.StationRepository
 import dagger.Binds
 import dagger.Module
@@ -17,4 +21,16 @@ abstract class RepositoryModule {
     abstract fun bindStationRepository(
         stationRepositoryImpl: StationRepositoryImpl
     ): StationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFavoriteRepository(
+        favoriteRepositoryImpl: FavoriteRepositoryImpl
+    ): FavoriteRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindHistoryRepository(
+        historyRepositoryImpl: HistoryRepositoryImpl
+    ): HistoryRepository
 }

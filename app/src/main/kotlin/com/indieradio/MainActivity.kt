@@ -12,7 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import com.indieradio.ui.screens.RadioPlayerScreen
+import com.indieradio.ui.screens.MainScreen
 import com.indieradio.ui.theme.IndieradioTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    RadioPlayerScreen()
+                    MainScreen()
                 }
             }
         }

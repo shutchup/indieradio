@@ -4,12 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.indieradio.domain.model.PlaybackState
 import com.indieradio.domain.model.Station
+import com.indieradio.domain.repository.FavoriteRepository
 import com.indieradio.domain.repository.StationRepository
 import com.indieradio.player.RadioPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,7 +22,8 @@ import javax.inject.Inject
 @HiltViewModel
 class RadioPlayerViewModel @Inject constructor(
     private val radioPlayer: RadioPlayer,
-    private val stationRepository: StationRepository
+    private val stationRepository: StationRepository,
+    private val favoriteRepository: FavoriteRepository
 ) : ViewModel() {
 
     // Playback state from RadioPlayer
@@ -28,6 +32,21 @@ class RadioPlayerViewModel @Inject constructor(
     // UI state for stations list
     private val _uiState = MutableStateFlow<StationListUiState>(StationListUiState.Loading)
     val uiState: StateFlow<StationListUiState> = _uiState.asStateFlow()
+
+    // Favorites
+    val favorites: StateFlow<List<Station>> = favoriteRepository.getAllFavorites()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val favoritesCount: StateFlow<Int> = favoriteRepository.getFavoritesCount()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0
+        )
 
     init {
         // Load initial popular stations
@@ -157,6 +176,41 @@ class RadioPlayerViewModel @Inject constructor(
                     )
                 }
             )
+        }
+    }
+
+    /**
+     * Toggle favorite status of a station
+     */
+    fun toggleFavorite(station: Station) {
+        viewModelScope.launch {
+            favoriteRepository.toggleFavorite(station)
+        }
+    }
+
+    /**
+     * Check if a station is favorited
+     */
+    fun isFavorite(stationUuid: String): StateFlow<Boolean> {
+        return favoriteRepository.isFavorite(stationUuid)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = false
+            )
+    }
+
+    /**
+     * Load favorites into UI
+     */
+    fun loadFavorites() {
+        viewModelScope.launch {
+            val favoritesList = favorites.value
+            _uiState.value = if (favoritesList.isEmpty()) {
+                StationListUiState.Empty
+            } else {
+                StationListUiState.Success(favoritesList)
+            }
         }
     }
 

@@ -29,12 +29,7 @@ fun RadioPlayerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Indieradio") },
-                actions = {
-                    IconButton(onClick = { /* TODO: Settings */ }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                }
+                title = { Text("Now Playing") }
             )
         }
     ) { paddingValues ->
@@ -54,6 +49,10 @@ fun RadioPlayerScreen(
                     }
                 },
                 onStop = { viewModel.stop() },
+                onFavoriteClick = { station ->
+                    viewModel.toggleFavorite(station)
+                },
+                viewModel = viewModel,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -108,7 +107,9 @@ fun RadioPlayerScreen(
                                 station = station,
                                 isPlaying = playbackState is PlaybackState.Playing &&
                                     (playbackState as? PlaybackState.Playing)?.station?.stationUuid == station.stationUuid,
-                                onClick = { viewModel.playStation(station) }
+                                onClick = { viewModel.playStation(station) },
+                                onFavoriteClick = { viewModel.toggleFavorite(station) },
+                                viewModel = viewModel
                             )
                         }
                     }
@@ -150,6 +151,8 @@ fun NowPlayingSection(
     playbackState: PlaybackState,
     onPlayPause: () -> Unit,
     onStop: () -> Unit,
+    onFavoriteClick: (Station) -> Unit,
+    viewModel: RadioPlayerViewModel,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -193,33 +196,58 @@ fun NowPlayingSection(
                 }
 
                 is PlaybackState.Playing -> {
+                    val isFavorite by viewModel.isFavorite(playbackState.station.stationUuid).collectAsState()
+
                     Column {
-                        Text(
-                            text = playbackState.station.name,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Place,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = playbackState.station.country,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            playbackState.station.codec?.let { codec ->
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "$codec • ${playbackState.station.getBitrateString()}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = playbackState.station.name,
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Place,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = playbackState.station.country,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    playbackState.station.codec?.let { codec ->
+                                        Text(
+                                            text = "$codec • ${playbackState.station.getBitrateString()}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                            IconButton(onClick = { onFavoriteClick(playbackState.station) }) {
+                                Icon(
+                                    imageVector = if (isFavorite) {
+                                        Icons.Default.Favorite
+                                    } else {
+                                        Icons.Default.FavoriteBorder
+                                    },
+                                    contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                                    tint = if (isFavorite) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
                                 )
                             }
                         }
@@ -249,17 +277,42 @@ fun NowPlayingSection(
                 }
 
                 is PlaybackState.Paused -> {
+                    val isFavorite by viewModel.isFavorite(playbackState.station.stationUuid).collectAsState()
+
                     Column {
-                        Text(
-                            text = playbackState.station.name,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Paused",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = playbackState.station.name,
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Paused",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            IconButton(onClick = { onFavoriteClick(playbackState.station) }) {
+                                Icon(
+                                    imageVector = if (isFavorite) {
+                                        Icons.Default.Favorite
+                                    } else {
+                                        Icons.Default.FavoriteBorder
+                                    },
+                                    contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                                    tint = if (isFavorite) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             horizontalArrangement = Arrangement.Center,
@@ -323,8 +376,12 @@ fun StationItem(
     station: Station,
     isPlaying: Boolean,
     onClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
+    viewModel: RadioPlayerViewModel,
     modifier: Modifier = Modifier
 ) {
+    val isFavorite by viewModel.isFavorite(station.stationUuid).collectAsState()
+
     Card(
         onClick = onClick,
         modifier = modifier
@@ -396,6 +453,23 @@ fun StationItem(
                         )
                     }
                 }
+            }
+
+            // Favorite button
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (isFavorite) {
+                        Icons.Default.Favorite
+                    } else {
+                        Icons.Default.FavoriteBorder
+                    },
+                    contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                    tint = if (isFavorite) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
             }
 
             // Votes

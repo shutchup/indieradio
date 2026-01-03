@@ -7,10 +7,15 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.indieradio.domain.model.PlaybackState
 import com.indieradio.domain.model.Station
+import com.indieradio.domain.repository.HistoryRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,14 +24,19 @@ import javax.inject.Singleton
  */
 @Singleton
 class RadioPlayer @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val historyRepository: HistoryRepository
 ) {
 
     private var exoPlayer: ExoPlayer? = null
     private var currentStation: Station? = null
+    private var hasAddedToHistory = false
 
     private val _playbackState = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
+
+    // Coroutine scope for background operations
+    private val playerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         initializePlayer()
@@ -55,6 +65,11 @@ class RadioPlayer @Inject constructor(
                                 station = station,
                                 isBuffering = false
                             )
+                            // Add to history only once per station play
+                            if (!hasAddedToHistory) {
+                                hasAddedToHistory = true
+                                addToHistory(station)
+                            }
                         }
                     }
                 }
@@ -70,6 +85,7 @@ class RadioPlayer @Inject constructor(
      */
     fun playStation(station: Station) {
         currentStation = station
+        hasAddedToHistory = false // Reset flag for new station
         _playbackState.value = PlaybackState.Loading(station)
 
         exoPlayer?.apply {
@@ -165,4 +181,18 @@ class RadioPlayer @Inject constructor(
      * Get current playback position (not relevant for radio, but useful for UI)
      */
     fun getCurrentPosition(): Long = exoPlayer?.currentPosition ?: 0L
+
+    /**
+     * Add station to recently played history
+     */
+    private fun addToHistory(station: Station) {
+        playerScope.launch {
+            try {
+                historyRepository.addToHistory(station)
+            } catch (e: Exception) {
+                // Silently fail - history is not critical
+                e.printStackTrace()
+            }
+        }
+    }
 }
