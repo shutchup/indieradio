@@ -113,8 +113,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
 
     // Dependency Injection (Hilt)
-    implementation("com.google.dagger:hilt-android:2.50")
-    ksp("com.google.dagger:hilt-compiler:2.50")
+    implementation("com.google.dagger:hilt-android:2.48")
+    ksp("com.google.dagger:hilt-compiler:2.48")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Local Storage
