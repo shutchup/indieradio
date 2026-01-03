@@ -66,7 +66,7 @@ fun BrowseScreen(
                 }
             }
 
-            HorizontalDivider()
+            Divider()
 
             // Station list
             when (uiState) {

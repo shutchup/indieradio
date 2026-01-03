@@ -35,7 +35,7 @@ fun SettingsScreen() {
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Placeholder for future settings
             SettingsItem(
