@@ -1,21 +1,30 @@
 package com.indieradio.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.indieradio.ui.theme.skin.SkinTheme
+import com.indieradio.ui.viewmodel.SkinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    skinViewModel: SkinViewModel = hiltViewModel()
+) {
+    val currentSkin by skinViewModel.currentSkin.collectAsState()
+    var showSkinDialog by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -37,12 +46,12 @@ fun SettingsScreen() {
 
             Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-            // Placeholder for future settings
+            // Skin/Theme selector
             SettingsItem(
                 icon = Icons.Default.Palette,
-                title = "Theme",
-                subtitle = "Modern (More themes coming soon)",
-                onClick = { /* TODO: Theme selection */ }
+                title = "Radio Skin",
+                subtitle = currentSkin.displayName,
+                onClick = { showSkinDialog = true }
             )
 
             SettingsItem(
@@ -79,6 +88,91 @@ fun SettingsScreen() {
             }
         }
     }
+
+    // Skin selection dialog
+    if (showSkinDialog) {
+        SkinSelectionDialog(
+            currentSkin = currentSkin,
+            availableSkins = skinViewModel.availableSkins,
+            onSkinSelected = { skin ->
+                skinViewModel.selectSkin(skin)
+                showSkinDialog = false
+            },
+            onDismiss = { showSkinDialog = false }
+        )
+    }
+}
+
+/**
+ * Dialog for selecting radio skin
+ */
+@Composable
+private fun SkinSelectionDialog(
+    currentSkin: SkinTheme,
+    availableSkins: List<SkinTheme>,
+    onSkinSelected: (SkinTheme) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Choose Radio Skin") },
+        text = {
+            Column {
+                Text(
+                    text = "Select your preferred vintage radio design",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                availableSkins.forEach { skin ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = skin == currentSkin,
+                                onClick = { onSkinSelected(skin) }
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = skin == currentSkin,
+                            onClick = { onSkinSelected(skin) }
+                        )
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = skin.displayName,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = skin.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (skin == currentSkin) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Selected",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

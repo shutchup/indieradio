@@ -14,17 +14,114 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.indieradio.domain.model.PlaybackState
 import com.indieradio.domain.model.Station
+import com.indieradio.ui.components.vintage.VintageRadioBody
+import com.indieradio.ui.theme.skin.SkinTheme
 import com.indieradio.ui.viewmodel.RadioPlayerViewModel
+import com.indieradio.ui.viewmodel.SkinViewModel
 import com.indieradio.ui.viewmodel.StationListUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadioPlayerScreen(
-    viewModel: RadioPlayerViewModel = hiltViewModel()
+    viewModel: RadioPlayerViewModel = hiltViewModel(),
+    skinViewModel: SkinViewModel = hiltViewModel()
 ) {
     val playbackState by viewModel.playbackState.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val currentSkin by skinViewModel.currentSkin.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var volumeLevel by remember { mutableStateOf(10) } // 0-15 for vintage
+
+    // Switch UI based on selected skin
+    when (currentSkin) {
+        SkinTheme.Vintage80s -> {
+            // Full-screen vintage radio player
+            VintageRadioPlayer(
+                viewModel = viewModel,
+                playbackState = playbackState,
+                uiState = uiState,
+                volumeLevel = volumeLevel,
+                onVolumeChange = { volumeLevel = it }
+            )
+        }
+        else -> {
+            // Modern minimal UI (existing)
+            ModernRadioPlayer(
+                viewModel = viewModel,
+                playbackState = playbackState,
+                uiState = uiState,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it }
+            )
+        }
+    }
+}
+
+/**
+ * Vintage 80s radio player UI
+ */
+@Composable
+private fun VintageRadioPlayer(
+    viewModel: RadioPlayerViewModel,
+    playbackState: PlaybackState,
+    uiState: StationListUiState,
+    volumeLevel: Int,
+    onVolumeChange: (Int) -> Unit
+) {
+    val stations = when (uiState) {
+        is StationListUiState.Success -> uiState.stations
+        else -> emptyList()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        VintageRadioBody(
+            playbackState = playbackState,
+            currentVolume = volumeLevel,
+            onVolumeChange = onVolumeChange,
+            onPowerToggle = {
+                when (playbackState) {
+                    is PlaybackState.Playing -> viewModel.pause()
+                    is PlaybackState.Paused -> viewModel.resume()
+                    is PlaybackState.Idle -> {
+                        // Play first available station
+                        if (stations.isNotEmpty()) {
+                            viewModel.playStation(stations.first())
+                        }
+                    }
+                    else -> {}
+                }
+            },
+            onFrequencyChange = { frequency ->
+                // Find station close to this frequency and play it
+                // Simple implementation: map frequency to station index
+                val index = ((frequency - 88f) / 20f * stations.size).toInt()
+                    .coerceIn(0, stations.size - 1)
+                if (stations.isNotEmpty()) {
+                    viewModel.playStation(stations[index])
+                }
+            },
+            stations = stations
+        )
+    }
+}
+
+/**
+ * Modern minimal player UI (existing design)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ModernRadioPlayer(
+    viewModel: RadioPlayerViewModel,
+    playbackState: PlaybackState,
+    uiState: StationListUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit
+) {
 
     Scaffold(
         topBar = {
