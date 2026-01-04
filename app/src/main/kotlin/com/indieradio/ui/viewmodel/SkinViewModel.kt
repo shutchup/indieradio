@@ -25,7 +25,7 @@ class SkinViewModel @Inject constructor(
     val currentSkin: StateFlow<SkinTheme> = skinRepository.currentSkin
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = SkinTheme.ModernMinimal
         )
 
