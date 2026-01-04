@@ -159,7 +159,7 @@ private fun ModernRadioPlayer(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = {
-                    searchQuery = it
+                    onSearchQueryChange(it)
                     viewModel.searchStations(it)
                 },
                 placeholder = { Text("Search stations...") },
@@ -169,7 +169,7 @@ private fun ModernRadioPlayer(
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = {
-                            searchQuery = ""
+                            onSearchQueryChange("")
                             viewModel.loadPopularStations()
                         }) {
                             Icon(Icons.Default.Clear, contentDescription = "Clear")

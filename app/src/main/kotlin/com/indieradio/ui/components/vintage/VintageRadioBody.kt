@@ -51,7 +51,7 @@ fun VintageRadioBody(
         if (stations.isEmpty()) {
             emptyMap()
         } else {
-            val frequencies = (88.0f..108.0f step 0.5f).toList()
+            val frequencies = (0..40).map { 88.0f + it * 0.5f }
             stations.take(frequencies.size).mapIndexed { index, station ->
                 frequencies[index] to station
             }.toMap()
