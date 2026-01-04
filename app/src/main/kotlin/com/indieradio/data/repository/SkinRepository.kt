@@ -7,20 +7,16 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.indieradio.ui.theme.skin.SkinTheme
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
 
 private val Context.skinDataStore: DataStore<Preferences> by preferencesDataStore(name = "skin_preferences")
 
 /**
  * Repository for managing skin theme preferences
  */
-@Singleton
-class SkinRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+class SkinRepository(
+    private val context: Context
 ) {
     private val dataStore = context.skinDataStore
 
