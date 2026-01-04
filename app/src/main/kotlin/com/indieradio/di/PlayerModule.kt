@@ -1,6 +1,7 @@
 package com.indieradio.di
 
 import android.content.Context
+import com.indieradio.domain.repository.HistoryRepository
 import com.indieradio.player.RadioPlayer
 import dagger.Module
 import dagger.Provides
@@ -16,8 +17,9 @@ object PlayerModule {
     @Provides
     @Singleton
     fun provideRadioPlayer(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        historyRepository: HistoryRepository
     ): RadioPlayer {
-        return RadioPlayer(context)
+        return RadioPlayer(context, historyRepository)
     }
 }

@@ -15,13 +15,13 @@ data class FavoriteEntity(
     val urlResolved: String,
     val country: String,
     val countryCode: String,
-    val state: String,
-    val language: String,
-    val tags: String,
+    val state: String?,
+    val language: String?,
+    val tags: String?,
     val codec: String?,
     val bitrate: Int?,
-    val homepage: String,
-    val favicon: String,
+    val homepage: String?,
+    val favicon: String?,
     val votes: Int,
     val addedAt: Long = System.currentTimeMillis()
 )

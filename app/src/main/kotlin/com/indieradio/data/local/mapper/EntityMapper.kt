@@ -39,16 +39,25 @@ fun FavoriteEntity.toStation(): Station {
         name = name,
         url = url,
         urlResolved = urlResolved,
+        homepage = homepage,
+        favicon = favicon,
         country = country,
         countryCode = countryCode,
         state = state,
         language = language,
+        languageCodes = null,
         tags = tags,
         codec = codec,
         bitrate = bitrate,
-        homepage = homepage,
-        favicon = favicon,
-        votes = votes
+        votes = votes,
+        clickCount = 0,
+        clickTrend = 0,
+        geoLat = null,
+        geoLong = null,
+        lastCheckOk = true,
+        lastCheckTime = null,
+        clickTimestamp = null,
+        changeUuid = null
     )
 }
 
@@ -83,15 +92,24 @@ fun HistoryEntity.toStation(): Station {
         name = name,
         url = url,
         urlResolved = urlResolved,
+        homepage = homepage,
+        favicon = favicon,
         country = country,
         countryCode = countryCode,
         state = state,
         language = language,
+        languageCodes = null,
         tags = tags,
         codec = codec,
         bitrate = bitrate,
-        homepage = homepage,
-        favicon = favicon,
-        votes = votes
+        votes = votes,
+        clickCount = 0,
+        clickTrend = 0,
+        geoLat = null,
+        geoLong = null,
+        lastCheckOk = true,
+        lastCheckTime = null,
+        clickTimestamp = null,
+        changeUuid = null
     )
 }
