@@ -22,6 +22,7 @@ class SkinRepository(
 
     companion object {
         private val SKIN_ID_KEY = stringPreferencesKey("selected_skin_id")
+        private const val DEFAULT_SKIN_ID = "modern_minimal"
     }
 
     /**
@@ -29,7 +30,7 @@ class SkinRepository(
      */
     val currentSkin: Flow<SkinTheme> = dataStore.data
         .map { preferences ->
-            val skinId = preferences[SKIN_ID_KEY] ?: SkinTheme.ModernMinimal.id
+            val skinId = preferences[SKIN_ID_KEY] ?: DEFAULT_SKIN_ID
             SkinTheme.fromId(skinId)
         }
 
