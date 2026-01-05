@@ -30,9 +30,10 @@ class SkinViewModel @Inject constructor(
         )
 
     /**
-     * Available skins
+     * Available skins - computed on demand to avoid initialization issues
      */
-    val availableSkins: List<SkinTheme> = SkinTheme.all
+    val availableSkins: List<SkinTheme>
+        get() = listOf(SkinTheme.ModernMinimal, SkinTheme.Vintage80s)
 
     /**
      * Select a new skin theme
