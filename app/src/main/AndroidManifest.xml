@@ -33,17 +33,24 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="35">
 
-        <!-- Main Activity -->
+        <!-- Crash Viewer Activity (Launcher) -->
         <activity
-            android:name=".MainActivity"
+            android:name=".CrashViewerActivity"
             android:exported="true"
-            android:theme="@style/Theme.Indieradio"
-            android:screenOrientation="portrait"
-            android:configChanges="orientation|screenSize|keyboardHidden">
+            android:theme="@style/Theme.Indieradio">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <!-- Main Activity -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Indieradio"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden">
         </activity>
 
         <!-- Media Playback Service -->
