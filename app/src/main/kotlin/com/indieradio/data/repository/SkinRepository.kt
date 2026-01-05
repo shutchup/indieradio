@@ -31,7 +31,11 @@ class SkinRepository(
     val currentSkin: Flow<SkinTheme> = dataStore.data
         .map { preferences ->
             val skinId = preferences[SKIN_ID_KEY] ?: DEFAULT_SKIN_ID
-            SkinTheme.fromId(skinId)
+            // Directly map to avoid initialization race conditions
+            when (skinId) {
+                "vintage_80s" -> SkinTheme.Vintage80s
+                else -> SkinTheme.ModernMinimal
+            }
         }
 
     /**
