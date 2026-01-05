@@ -1,9 +1,13 @@
 package com.indieradio.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicNote
@@ -13,18 +17,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.indieradio.ui.theme.skin.SkinTheme
 import com.indieradio.ui.viewmodel.SkinViewModel
+import com.indieradio.util.CrashLogger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     skinViewModel: SkinViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val currentSkin by skinViewModel.currentSkin.collectAsState()
     var showSkinDialog by remember { mutableStateOf(false) }
+    var showCrashLogDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -68,6 +78,21 @@ fun SettingsScreen(
                 onClick = { /* TODO: Notification settings */ }
             )
 
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Text(
+                text = "Debug",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            SettingsItem(
+                icon = Icons.Default.BugReport,
+                title = "Crash Logs",
+                subtitle = "View app crash reports",
+                onClick = { showCrashLogDialog = true }
+            )
+
             Spacer(modifier = Modifier.weight(1f))
 
             // App info
@@ -99,6 +124,17 @@ fun SettingsScreen(
                 showSkinDialog = false
             },
             onDismiss = { showSkinDialog = false }
+        )
+    }
+
+    // Crash log viewer dialog
+    if (showCrashLogDialog) {
+        CrashLogDialog(
+            onDismiss = { showCrashLogDialog = false },
+            onClear = {
+                CrashLogger.clearCrashLog(context)
+                showCrashLogDialog = false
+            }
         )
     }
 }
@@ -170,6 +206,69 @@ private fun SkinSelectionDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Done")
+            }
+        }
+    )
+}
+
+/**
+ * Dialog for viewing crash logs
+ */
+@Composable
+private fun CrashLogDialog(
+    onDismiss: () -> Unit,
+    onClear: () -> Unit
+) {
+    val context = LocalContext.current
+    val crashLog = remember { CrashLogger.getCrashLog(context) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Crash Logs") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+            ) {
+                Text(
+                    text = "Copy this log and share with the developer:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = crashLog,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .horizontalScroll(rememberScrollState())
+                            .padding(8.dp),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onClear) {
+                Text("Clear Logs")
             }
         }
     )

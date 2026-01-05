@@ -1,6 +1,7 @@
 package com.indieradio
 
 import android.app.Application
+import com.indieradio.util.CrashLogger
 import dagger.hilt.android.HiltAndroidApp
 
 /**
@@ -11,6 +12,8 @@ class IndieRadioApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Application initialization will go here
+
+        // Initialize crash logger to capture crashes
+        CrashLogger(this)
     }
 }
