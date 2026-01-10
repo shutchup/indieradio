@@ -1,27 +1,31 @@
 package com.indieradio.ui.components.vintage
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.indieradio.R
 import com.indieradio.domain.model.PlaybackState
 import com.indieradio.domain.model.Station
+import kotlin.math.atan2
 
 /**
- * Complete vintage 80s radio interface
+ * Photorealistic vintage 80s radio player using image assets
  *
- * Assembles all vintage components into an authentic radio experience
+ * This is a complete redesign using AI-generated photorealistic components
+ * layered to create an authentic vintage radio experience
  */
 @Composable
 fun VintageRadioBody(
@@ -33,6 +37,12 @@ fun VintageRadioBody(
     stations: List<Station>,
     modifier: Modifier = Modifier
 ) {
+    // State
+    var isPoweredOn by remember { mutableStateOf(false) }
+    var currentFrequency by remember { mutableStateOf(96.0f) }
+    var dialRotation by remember { mutableStateOf(0f) } // Pointer rotation angle
+    var volumeRotation by remember { mutableStateOf((currentVolume / 15f) * 270f) }
+
     // Extract current state
     val isPlaying = playbackState is PlaybackState.Playing
     val currentStation = when (playbackState) {
@@ -43,10 +53,7 @@ fun VintageRadioBody(
         else -> null
     }
 
-    var isPoweredOn by remember { mutableStateOf(false) }
-    var currentFrequency by remember { mutableStateOf(96.0f) }
-
-    // Map stations to frequencies (simple distribution)
+    // Map stations to frequencies (88-108 MHz)
     val stationFrequencyMap = remember(stations) {
         if (stations.isEmpty()) {
             emptyMap()
@@ -58,124 +65,184 @@ fun VintageRadioBody(
         }
     }
 
-    // Find closest station to current frequency
-    val closestStation = remember(currentFrequency, stationFrequencyMap) {
-        stationFrequencyMap.entries.minByOrNull {
-            kotlin.math.abs(it.key - currentFrequency)
-        }?.value
+    // Update dial rotation when frequency changes
+    LaunchedEffect(currentFrequency) {
+        // Map frequency 88-108 MHz to rotation -135° to +135° (270° range)
+        val normalizedFreq = (currentFrequency - 88f) / 20f // 0.0 to 1.0
+        dialRotation = -135f + (normalizedFreq * 270f)
     }
 
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(16.dp)
-            )
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF5C4A3A), // Lighter wood top
-                        Color(0xFF4A3728), // Dark walnut middle
-                        Color(0xFF3A2E23)  // Deep wood bottom
-                    )
-                ),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .border(
-                width = 4.dp,
-                color = Color(0xFF2C2219), // Darker wood edge
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(24.dp)
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Brand nameplate (generic vintage style)
-            Text(
-                text = "VINTAGE RADIO",
-                color = Color(0xFFB8860B), // Brass/gold
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Serif,
-                letterSpacing = 4.sp
-            )
+        // Layer 1: Wood panel background with cutouts
+        Image(
+            painter = painterResource(id = R.drawable.vintage_wood_panel),
+            contentDescription = "Vintage radio body",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(9f / 16f) // Portrait phone aspect ratio
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        // Layer 2: Brass dial (positioned at top)
+        Image(
+            painter = painterResource(id = R.drawable.vintage_dial_complete),
+            contentDescription = "Frequency dial",
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .aspectRatio(1f)
+                .align(Alignment.TopCenter)
+                .offset(y = 60.dp)
+                .pointerInput(Unit) {
+                    detectDragGestures { change, dragAmount ->
+                        if (isPoweredOn) {
+                            // Calculate rotation angle based on drag
+                            val centerX = size.width / 2f
+                            val centerY = size.height / 2f
+                            val touchX = change.position.x
+                            val touchY = change.position.y
 
-            // Station Display
-            VintageStationDisplay(
-                frequency = currentFrequency,
-                stationName = if (isPoweredOn) {
-                    closestStation?.name ?: currentStation?.name ?: "Tuning..."
-                } else {
-                    ""
-                },
-                isPlaying = isPlaying && isPoweredOn,
-                isPoweredOn = isPoweredOn
-            )
+                            val angle = atan2(touchY - centerY, touchX - centerX)
+                            val degrees = Math.toDegrees(angle.toDouble()).toFloat()
 
-            Spacer(modifier = Modifier.height(24.dp))
+                            // Map angle to frequency (88-108 MHz)
+                            val normalizedAngle = ((degrees + 180f) % 360f) / 360f
+                            val newFreq = 88f + (normalizedAngle * 20f)
 
-            // Frequency Dial
-            VintageFrequencyDial(
-                currentFrequency = currentFrequency,
-                stations = stations,
-                onFrequencyChange = { newFreq ->
-                    if (isPoweredOn) {
-                        currentFrequency = newFreq
-                        onFrequencyChange(newFreq)
+                            if (newFreq in 88f..108f) {
+                                currentFrequency = newFreq
+                                onFrequencyChange(newFreq)
+                            }
+                        }
                     }
                 }
-            )
+        )
 
-            Spacer(modifier = Modifier.height(24.dp))
+        // Layer 3: Dial pointer (Canvas-drawn white line that rotates)
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .aspectRatio(1f)
+                .align(Alignment.TopCenter)
+                .offset(y = 60.dp)
+        ) {
+            val centerX = size.width / 2f
+            val centerY = size.height / 2f
+            val pointerLength = size.width * 0.35f // Extends from center
 
-            // Controls row (Volume + Power)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Volume Knob
-                VintageKnob(
-                    value = currentVolume,
-                    label = "VOLUME",
-                    onValueChange = onVolumeChange
+            rotate(dialRotation, pivot = Offset(centerX, centerY)) {
+                drawLine(
+                    color = Color.White,
+                    start = Offset(centerX, centerY),
+                    end = Offset(centerX, centerY - pointerLength),
+                    strokeWidth = 4.dp.toPx(),
+                    cap = StrokeCap.Round
                 )
+            }
+        }
 
-                // Power Switch
-                VintagePowerSwitch(
-                    isOn = isPoweredOn,
-                    onToggle = {
+        // Layer 4: Left knob (Volume control)
+        Image(
+            painter = painterResource(id = R.drawable.vintage_knob_left),
+            contentDescription = "Volume control",
+            modifier = Modifier
+                .size(100.dp)
+                .align(Alignment.CenterStart)
+                .offset(x = 80.dp, y = 20.dp)
+                .pointerInput(Unit) {
+                    var lastAngle = 0f
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val centerX = size.width / 2f
+                            val centerY = size.height / 2f
+                            lastAngle = atan2(offset.y - centerY, offset.x - centerX)
+                        },
+                        onDrag = { change, _ ->
+                            val centerX = size.width / 2f
+                            val centerY = size.height / 2f
+                            val touchX = change.position.x
+                            val touchY = change.position.y
+
+                            val currentAngle = atan2(touchY - centerY, touchX - centerX)
+                            val angleDelta = currentAngle - lastAngle
+                            lastAngle = currentAngle
+
+                            // Update volume rotation (0-270 degrees = 0-15 volume)
+                            volumeRotation = (volumeRotation + Math.toDegrees(angleDelta.toDouble()).toFloat())
+                                .coerceIn(0f, 270f)
+
+                            val newVolume = ((volumeRotation / 270f) * 15f).toInt()
+                            if (newVolume != currentVolume) {
+                                onVolumeChange(newVolume)
+                            }
+                        }
+                    )
+                }
+        )
+
+        // Layer 5: Right knob (Tuning/Balance - same image)
+        Image(
+            painter = painterResource(id = R.drawable.vintage_knob_left),
+            contentDescription = "Tuning control",
+            modifier = Modifier
+                .size(100.dp)
+                .align(Alignment.CenterEnd)
+                .offset(x = (-80).dp, y = 20.dp)
+        )
+
+        // Layer 6: Power switch
+        Image(
+            painter = painterResource(id = R.drawable.vintage_power_switch),
+            contentDescription = "Power switch",
+            modifier = Modifier
+                .width(120.dp)
+                .height(60.dp)
+                .align(Alignment.CenterEnd)
+                .offset(x = (-30).dp, y = (-60).dp)
+                .pointerInput(Unit) {
+                    detectDragGestures { _, _ ->
                         isPoweredOn = !isPoweredOn
                         onPowerToggle()
                     }
+                }
+        )
+
+        // Layer 7: Brass divider bars
+        Image(
+            painter = painterResource(id = R.drawable.vintage_brass_bars),
+            contentDescription = "Decorative brass bars",
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .height(40.dp)
+                .align(Alignment.Center)
+                .offset(y = 140.dp)
+        )
+
+        // Layer 8: LED glow effect (if powered on and playing)
+        if (isPoweredOn && isPlaying) {
+            Canvas(
+                modifier = Modifier
+                    .size(20.dp)
+                    .align(Alignment.CenterEnd)
+                    .offset(x = (-40).dp, y = (-50).dp)
+            ) {
+                drawCircle(
+                    color = Color(0xFFFF4500),
+                    radius = size.minDimension / 2f,
+                    alpha = 0.8f
+                )
+                // Glow effect
+                drawCircle(
+                    color = Color(0xFFFF4500),
+                    radius = size.minDimension,
+                    alpha = 0.3f,
+                    style = Stroke(width = 8.dp.toPx())
                 )
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Speaker Grille
-            VintageSpeakerGrille(
-                isPlaying = isPlaying && isPoweredOn,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Speaker label
-            Text(
-                text = "SPEAKER",
-                color = Color(0xFF8B7765).copy(alpha = 0.6f),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 3.sp
-            )
         }
     }
 }
