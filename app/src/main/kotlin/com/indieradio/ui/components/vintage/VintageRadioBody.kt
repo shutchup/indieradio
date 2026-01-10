@@ -2,48 +2,55 @@ package com.indieradio.ui.components.vintage
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.indieradio.R
 import com.indieradio.domain.model.PlaybackState
 import com.indieradio.domain.model.Station
 import kotlin.math.atan2
 
 /**
- * Photorealistic vintage 80s radio player using image assets
+ * Photorealistic vintage radio player
  *
- * This is a complete redesign using AI-generated photorealistic components
- * layered to create an authentic vintage radio experience
+ * The wood panel image contains all cutouts pre-positioned:
+ * - Top: Large dial cutout (centered, ~20% from top)
+ * - Middle: Two knob cutouts (side-by-side, ~50% from top)
+ * - Right: Power switch slot (~35% from top)
+ * - Center: Brass decorative bars (~58% from top)
+ * - Bottom: Speaker grille cutout (~70-95% from top)
+ *
+ * This component overlays the interactive elements exactly where the cutouts are.
  */
 @Composable
 fun VintageRadioBody(
     playbackState: PlaybackState,
-    currentVolume: Int, // 0-15
+    currentVolume: Int,
     onVolumeChange: (Int) -> Unit,
     onPowerToggle: () -> Unit,
     onFrequencyChange: (Float) -> Unit,
     stations: List<Station>,
     modifier: Modifier = Modifier
 ) {
-    // State
     var isPoweredOn by remember { mutableStateOf(false) }
     var currentFrequency by remember { mutableStateOf(96.0f) }
-    var dialRotation by remember { mutableStateOf(0f) } // Pointer rotation angle
-    var volumeRotation by remember { mutableStateOf((currentVolume / 15f) * 270f) }
+    var dialRotation by remember { mutableStateOf(0f) }
 
-    // Extract current state
     val isPlaying = playbackState is PlaybackState.Playing
     val currentStation = when (playbackState) {
         is PlaybackState.Playing -> playbackState.station
@@ -53,223 +60,143 @@ fun VintageRadioBody(
         else -> null
     }
 
-    // Map stations to frequencies (88-108 MHz)
-    val stationFrequencyMap = remember(stations) {
-        if (stations.isEmpty()) {
-            emptyMap()
-        } else {
-            val frequencies = (0..40).map { 88.0f + it * 0.5f }
-            stations.take(frequencies.size).mapIndexed { index, station ->
-                frequencies[index] to station
-            }.toMap()
-        }
-    }
-
-    // Update dial rotation when frequency changes
-    LaunchedEffect(currentFrequency) {
-        // Map frequency 88-108 MHz to rotation -135° to +135° (270° range)
-        val normalizedFreq = (currentFrequency - 88f) / 20f // 0.0 to 1.0
-        dialRotation = -135f + (normalizedFreq * 270f)
-    }
-
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(8.dp),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // Layer 1: Wood panel background (fills most of screen)
+        // Base layer: Wood panel with cutouts (fills entire screen)
         Image(
             painter = painterResource(id = R.drawable.vintage_wood_panel),
-            contentDescription = "Vintage radio body",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.95f)
+            contentDescription = "Radio body",
+            contentScale = ContentScale.FillHeight,
+            modifier = Modifier.fillMaxSize()
         )
 
-        // All other elements positioned relative to the wood panel
-        Column(
+        // Overlay layer: All interactive elements positioned to match cutouts
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.95f),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .aspectRatio(9f / 16f),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Layer 2: Main frequency dial (larger, centered)
+            // 1. Main frequency dial (top cutout - centered, 20% from top)
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.75f)
-                    .aspectRatio(1f),
+                    .fillMaxWidth(0.55f)
+                    .aspectRatio(1f)
+                    .align(Alignment.TopCenter)
+                    .offset(y = 80.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Dial background image
                 Image(
                     painter = painterResource(id = R.drawable.vintage_dial_complete),
                     contentDescription = "Frequency dial",
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
-                                if (isPoweredOn) {
-                                    // Calculate rotation angle based on drag
-                                    val centerX = size.width / 2f
-                                    val centerY = size.height / 2f
-                                    val touchX = change.position.x
-                                    val touchY = change.position.y
-
-                                    val angle = atan2(touchY - centerY, touchX - centerX)
-                                    val degrees = Math.toDegrees(angle.toDouble()).toFloat()
-
-                                    // Map angle to frequency (88-108 MHz)
-                                    val normalizedAngle = ((degrees + 180f) % 360f) / 360f
-                                    val newFreq = 88f + (normalizedAngle * 20f)
-
-                                    if (newFreq in 88f..108f) {
-                                        currentFrequency = newFreq
-                                        onFrequencyChange(newFreq)
-                                    }
-                                }
-                            }
-                        }
+                    modifier = Modifier.fillMaxSize()
                 )
-
-                // Dial pointer overlay
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val centerX = size.width / 2f
-                    val centerY = size.height / 2f
-                    val pointerLength = size.width * 0.35f
-
-                    rotate(dialRotation, pivot = Offset(centerX, centerY)) {
-                        drawLine(
-                            color = Color.White,
-                            start = Offset(centerX, centerY),
-                            end = Offset(centerX, centerY - pointerLength),
-                            strokeWidth = 4.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-                    }
-                }
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            // 2. Power switch (right side, 35% from top)
+            Image(
+                painter = painterResource(id = R.drawable.vintage_power_switch),
+                contentDescription = "Power switch",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .width(100.dp)
+                    .height(50.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-35).dp, y = 170.dp)
+                    .clickable {
+                        isPoweredOn = !isPoweredOn
+                        onPowerToggle()
+                    }
+            )
 
-            // Layer 3: Power switch and LED (right side)
+            // 3. Left knob - Volume (left cutout, 50% from top)
+            Image(
+                painter = painterResource(id = R.drawable.vintage_knob_left),
+                contentDescription = "Volume",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(90.dp)
+                    .align(Alignment.TopStart)
+                    .offset(x = 55.dp, y = 310.dp)
+            )
+
+            // 4. Right knob - Tuning (right cutout, 50% from top)
+            Image(
+                painter = painterResource(id = R.drawable.vintage_knob_left),
+                contentDescription = "Tuning",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(90.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-55).dp, y = 310.dp)
+            )
+
+            // 5. Brass bars (58% from top)
+            Image(
+                painter = painterResource(id = R.drawable.vintage_brass_bars),
+                contentDescription = "Brass bars",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(25.dp)
+                    .align(Alignment.TopCenter)
+                    .offset(y = 420.dp)
+            )
+
+            // 6. Speaker grille area - Station info display (70-95% from top)
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
-                    .height(80.dp)
+                    .height(180.dp)
+                    .align(Alignment.BottomCenter)
+                    .offset(y = (-30).dp),
+                contentAlignment = Alignment.Center
             ) {
-                // Power switch
-                Image(
-                    painter = painterResource(id = R.drawable.vintage_power_switch),
-                    contentDescription = "Power switch",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .width(100.dp)
-                        .height(50.dp)
-                        .align(Alignment.CenterEnd)
-                        .pointerInput(Unit) {
-                            detectDragGestures { _, _ ->
-                                isPoweredOn = !isPoweredOn
-                                onPowerToggle()
-                            }
-                        }
-                )
-
-                // LED indicator next to power switch
-                if (isPoweredOn && isPlaying) {
-                    Canvas(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .align(Alignment.CenterEnd)
-                            .offset(x = (-110).dp)
+                if (currentStation != null) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        drawCircle(
-                            color = Color(0xFFFF4500),
-                            radius = size.minDimension / 2f,
-                            alpha = 0.9f
+                        Text(
+                            text = currentStation.name,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C1810),
+                            textAlign = TextAlign.Center,
+                            maxLines = 2
                         )
-                        // Glow effect
-                        drawCircle(
-                            color = Color(0xFFFF4500),
-                            radius = size.minDimension * 1.2f,
-                            alpha = 0.4f,
-                            style = Stroke(width = 6.dp.toPx())
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "${currentFrequency.toInt()} MHz",
+                            fontSize = 16.sp,
+                            color = Color(0xFF6B4423),
+                            textAlign = TextAlign.Center
                         )
-                    }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Layer 4: Control knobs (left and right)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .height(140.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left knob (Volume)
-                Image(
-                    painter = painterResource(id = R.drawable.vintage_knob_left),
-                    contentDescription = "Volume control",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .size(120.dp)
-                        .pointerInput(Unit) {
-                            var lastAngle = 0f
-                            detectDragGestures(
-                                onDragStart = { offset ->
-                                    val centerX = size.width / 2f
-                                    val centerY = size.height / 2f
-                                    lastAngle = atan2(offset.y - centerY, offset.x - centerX)
-                                },
-                                onDrag = { change, _ ->
-                                    val centerX = size.width / 2f
-                                    val centerY = size.height / 2f
-                                    val touchX = change.position.x
-                                    val touchY = change.position.y
-
-                                    val currentAngle = atan2(touchY - centerY, touchX - centerX)
-                                    val angleDelta = currentAngle - lastAngle
-                                    lastAngle = currentAngle
-
-                                    volumeRotation = (volumeRotation + Math.toDegrees(angleDelta.toDouble()).toFloat())
-                                        .coerceIn(0f, 270f)
-
-                                    val newVolume = ((volumeRotation / 270f) * 15f).toInt()
-                                    if (newVolume != currentVolume) {
-                                        onVolumeChange(newVolume)
-                                    }
-                                }
+                        if (isPlaying) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "♫ Now Playing",
+                                fontSize = 14.sp,
+                                color = Color(0xFF8B5A3C),
+                                textAlign = TextAlign.Center
                             )
                         }
-                )
-
-                // Right knob (Tuning/Balance)
-                Image(
-                    painter = painterResource(id = R.drawable.vintage_knob_left),
-                    contentDescription = "Tuning control",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(120.dp)
-                )
+                    }
+                } else {
+                    Text(
+                        text = "Turn dial to tune",
+                        fontSize = 16.sp,
+                        color = Color(0xFF6B4423),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Layer 5: Brass decorative bars
-            Image(
-                painter = painterResource(id = R.drawable.vintage_brass_bars),
-                contentDescription = "Decorative brass bars",
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .height(30.dp)
-            )
         }
     }
 }
