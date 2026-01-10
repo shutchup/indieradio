@@ -18,9 +18,16 @@ object NetworkModule {
 
     /**
      * Base URL for Radio Browser API
-     * Using DNS round-robin endpoint for redundancy
+     *
+     * Radio Browser has multiple mirror servers:
+     * - https://de1.api.radio-browser.info/ (Germany)
+     * - https://nl1.api.radio-browser.info/ (Netherlands)
+     * - https://at1.api.radio-browser.info/ (Austria)
+     * - https://all.api.radio-browser.info/ (Round-robin - sometimes unstable)
+     *
+     * Using Netherlands mirror (nl1) as it's generally most stable
      */
-    private const val BASE_URL = "https://all.api.radio-browser.info/"
+    private const val BASE_URL = "https://nl1.api.radio-browser.info/"
 
     /**
      * User-Agent for API requests (recommended by Radio Browser API)
