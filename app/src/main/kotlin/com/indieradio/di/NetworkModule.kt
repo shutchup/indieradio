@@ -25,9 +25,9 @@ object NetworkModule {
      * - https://at1.api.radio-browser.info/ (Austria)
      * - https://all.api.radio-browser.info/ (Round-robin - sometimes unstable)
      *
-     * Using Netherlands mirror (nl1) as it's generally most stable
+     * Switched to Germany mirror (de1) for better reliability
      */
-    private const val BASE_URL = "https://nl1.api.radio-browser.info/"
+    private const val BASE_URL = "https://de1.api.radio-browser.info/"
 
     /**
      * User-Agent for API requests (recommended by Radio Browser API)
